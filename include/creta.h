@@ -11,6 +11,11 @@ struct RenderState {
     BITMAPINFO bitmapInfo;
 };
 
+struct Rect {
+	uint32_t x, y;
+	uint32_t width, height;
+};
+
 using SpriteID = uint32_t;
 
 struct Sprite {
@@ -24,13 +29,14 @@ public:
 	static Creta& getInstance();
 	static void init();
 	static void setTitle(const std::wstring &name);
-	static void setSize(const uint16_t x, const uint16_t y);
+	static void setSize(const uint32_t x, const uint32_t y);
 	static void render();
 	static std::vector<MSG> getEvents();
 	static void clearScreen(const uint32_t color);
-    static void drawRect(int x0, int y0, int x1, int y1, uint32_t color);
+    static void drawRect(const uint32_t left, const uint32_t top, const uint32_t right, const uint32_t bottom, const uint32_t color);
+    static void drawRect(const Rect &rect, const uint32_t color);
 	static SpriteID loadSprite(const std::wstring &filepath);
-	static void drawSprite(const SpriteID spriteID, int x, int y);
+	static void drawSprite(const SpriteID spriteID, const uint32_t x, const uint32_t y);
 
 private:
 	bool initialized;

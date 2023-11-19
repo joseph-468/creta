@@ -9,14 +9,13 @@ int WinMain(_In_ HINSTANCE hInstance, _In_opt_ HINSTANCE hPrevInstance, _In_ LPS
     Creta::init();
     Creta::setTitle(L"Game Window");
     Creta::setSize(1280, 720);
-    SpriteID sprite1 = Creta::loadSprite(L"assets/testsprite.bmp");
+    SpriteID img = Creta::loadSprite(L"assets/testsprite.bmp");
+
+    bool moving = false;
+    Rect rect = { 400, 400, 100, 200 };
 
     float deltaTime = 0.01666f;
     Clock clock;
-
-    bool moving = false;
-    int x = 200;
-	int y = 100;
 
     while (true) {
         for (MSG &msg : Creta::getEvents()) {
@@ -32,12 +31,12 @@ int WinMain(_In_ HINSTANCE hInstance, _In_opt_ HINSTANCE hPrevInstance, _In_ LPS
             }
         }
         if (moving) {
-            y += 1;
+            rect.y += 1;
         }
 
         Creta::clearScreen(GRAY);
-        Creta::drawRect(400, 400, 500, 600, GREEN);
-        Creta::drawSprite(sprite1, x, y);
+        Creta::drawRect(rect, GREEN);
+        Creta::drawSprite(img, 50, 50);
 		Creta::render();
         deltaTime = clock.tick(60);
     }

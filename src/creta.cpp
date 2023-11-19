@@ -69,7 +69,7 @@ void Creta::setTitle(const std::wstring &windowTitle) {
     SetWindowText(creta.hwnd, windowTitle.c_str());
 }
 
-void Creta::setSize(const uint16_t width, const uint16_t height) {
+void Creta::setSize(const uint32_t width, const uint32_t height) {
     Creta& creta = Creta::getInstance();
     if (!creta.initialized) exit(1);
 
@@ -110,19 +110,33 @@ void Creta::clearScreen(const uint32_t color) {
 	}
 }
 
-void Creta::drawRect(int x0, int y0, int x1, int y1, const uint32_t color) {
+void Creta::drawRect(const uint32_t left, const uint32_t top, const uint32_t right, const uint32_t bottom, const uint32_t color) {
     Creta& creta = Creta::getInstance();
     if (!creta.initialized) exit(1);
 
-    y0 = creta.renderState.height - y0;
-    y1 = creta.renderState.height - y1;
-    x0 = clamp(x0, 0, creta.renderState.width);
-    x1 = clamp(x1, 0, creta.renderState.width);
-    y0 = clamp(y0, 0, creta.renderState.height);
-    y1 = clamp(y1, 0, creta.renderState.height);
-    for (int y = y1; y < y0; y++) {
-        uint32_t *pixel = (uint32_t*)creta.renderState.memory + x0 + y * creta.renderState.width;
-        for (int x = x0; x < x1; x++) {
+    uint32_t x0 = clamp(left, 0, creta.renderState.width);
+    uint32_t x1 = clamp(right, 0, creta.renderState.width);
+    uint32_t y0 = clamp(creta.renderState.height - top, 0, creta.renderState.height);
+    uint32_t y1 = clamp(creta.renderState.height - bottom, 0, creta.renderState.height);
+    for (uint32_t yPos = y1; yPos < y0; yPos++) {
+        uint32_t *pixel = (uint32_t*)creta.renderState.memory + x0 + yPos * creta.renderState.width;
+        for (uint32_t xPos = x0; xPos < x1; xPos++) {
+            *pixel++ = color;
+        }
+    }
+}
+
+void Creta::drawRect(const Rect &rect, const uint32_t color) {
+    Creta& creta = Creta::getInstance();
+    if (!creta.initialized) exit(1);
+
+    const uint32_t left = clamp(rect.x, 0, creta.renderState.width);
+    const uint32_t right = clamp(rect.x + rect.width, 0, creta.renderState.width);
+    const uint32_t top = clamp(creta.renderState.height - rect.y, 0, creta.renderState.height);
+    const uint32_t bottom = clamp(creta.renderState.height - (rect.y + rect.height), 0, creta.renderState.height);
+    for (uint32_t y = bottom; y < top; y++) {
+        uint32_t *pixel = (uint32_t*)creta.renderState.memory + left + y * creta.renderState.width;
+        for (uint32_t x = left; x < right; x++) {
             *pixel++ = color;
         }
     }
@@ -155,23 +169,23 @@ SpriteID Creta::loadSprite(const std::wstring& filepath) {
     creta.sprites.push_back(sprite);
     DeleteObject(hBitmap);
     DeleteDC(hdc);
-    return creta.sprites.size()-1;
+    return static_cast<SpriteID>(creta.sprites.size() - 1);
 }
 
-void Creta::drawSprite(const SpriteID spriteID, int xPos, int yPos) {
+void Creta::drawSprite(const SpriteID spriteID, const uint32_t x, const uint32_t y) {
     Creta& creta = Creta::getInstance();
     if (!creta.initialized) exit(1);
     
     Sprite sprite = creta.sprites[spriteID];
-    uint32_t left = clamp(xPos, 0, creta.renderState.width);
-    uint32_t right = clamp(xPos + sprite.width, 0, creta.renderState.width);
-    uint32_t bottom = clamp(yPos + sprite.height, 0, creta.renderState.height);
-    uint32_t top = clamp(yPos, 0, creta.renderState.height);
+    uint32_t left = clamp(x, 0, creta.renderState.width);
+    uint32_t right = clamp(x + sprite.width, 0, creta.renderState.width);
+    uint32_t bottom = clamp(y + sprite.height, 0, creta.renderState.height);
+    uint32_t top = clamp(y, 0, creta.renderState.height);
 
-    for (int y = top; y < bottom; y++) {
-        uint32_t* pixel = (uint32_t*)creta.renderState.memory + left + ((creta.renderState.height - y-1) * creta.renderState.width);
-        for (int x = left; x < right; x++) {
-            *pixel++ = (uint32_t)sprite.data[x-xPos + (y-yPos) * sprite.width];
+    for (uint32_t yPos = top; yPos < bottom; yPos++) {
+        uint32_t* pixel = (uint32_t*)creta.renderState.memory + left + ((creta.renderState.height - yPos-1) * creta.renderState.width);
+        for (uint32_t xPos = left; xPos < right; xPos++) {
+            *pixel++ = (uint32_t)sprite.data[xPos-x + (yPos-y) * sprite.width];
         }
     }
 }
@@ -179,25 +193,26 @@ void Creta::drawSprite(const SpriteID spriteID, int xPos, int yPos) {
 Clock::Clock() {
 	LARGE_INTEGER perf;
 	QueryPerformanceFrequency(&perf);
-	Clock::performanceFrequency = perf.QuadPart;
+    performanceFrequency = static_cast<float>(perf.QuadPart);
     QueryPerformanceCounter(&frameBeginTime);
+    frameEndTime = frameBeginTime;
 }
 
 // Timing may be innacurate
 float Clock::tick() {
 	QueryPerformanceCounter(&frameEndTime);
-	float deltaTime = static_cast<float>((Clock::frameEndTime.QuadPart - Clock::frameBeginTime.QuadPart)) / Clock::performanceFrequency;
-	Clock::frameBeginTime = Clock::frameEndTime;
+	float deltaTime = static_cast<float>((frameEndTime.QuadPart - frameBeginTime.QuadPart)) / performanceFrequency;
+	frameBeginTime = frameEndTime;
     return deltaTime;
 }
 
 float Clock::tick(const int FPS) {
 	QueryPerformanceCounter(&frameEndTime);
-	float deltaTime = static_cast<float>((Clock::frameEndTime.QuadPart - Clock::frameBeginTime.QuadPart)) / Clock::performanceFrequency;
-    float sleepTime = (1000.0 / FPS) - (deltaTime * 1000.0);
+	float deltaTime = static_cast<float>((frameEndTime.QuadPart - frameBeginTime.QuadPart)) / performanceFrequency;
+    DWORD sleepTime = static_cast<DWORD>((1000.0 / FPS) - (deltaTime * 1000.0));
     if (sleepTime < 0) sleepTime = 0;
     Sleep(sleepTime);
     QueryPerformanceCounter(&frameEndTime);
-	Clock::frameBeginTime = Clock::frameEndTime;
-    return deltaTime + (sleepTime / 1000.0);
+	frameBeginTime = frameEndTime;
+    return static_cast<float>(deltaTime + (sleepTime / 1000.0));
 }
