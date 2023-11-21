@@ -3,6 +3,7 @@
 #include <string>
 #include <stdint.h>
 
+#include "events.h"
 #include "utility.h"
 
 struct RenderState {
@@ -31,7 +32,7 @@ public:
 	static void setTitle(const std::wstring &name);
 	static void setSize(const uint32_t x, const uint32_t y);
 	static void render();
-	static std::vector<MSG> getEvents();
+	static std::vector<Event> getEvents();
 	static void clearScreen(const uint32_t color);
     static void drawRect(const uint32_t left, const uint32_t top, const uint32_t right, const uint32_t bottom, const uint32_t color);
     static void drawRect(const Rect &rect, const uint32_t color);
@@ -43,6 +44,7 @@ private:
 	HDC hdc;
 	HWND hwnd;
 	RenderState renderState;
+	POINT mousePos;
 	std::vector<Sprite> sprites;
 
 	Creta();

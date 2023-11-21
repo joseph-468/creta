@@ -6,7 +6,7 @@
 #include "../include/creta.h"
 #include "../include/utility.h"
 
-Creta::Creta() : initialized(false), hdc(nullptr), hwnd(nullptr), renderState() {}
+Creta::Creta() : initialized(false), hdc(nullptr), hwnd(nullptr), renderState(), mousePos() {}
 
 Creta& Creta::getInstance() {
     static Creta instance;
@@ -26,6 +26,7 @@ void Creta::init() {
     HINSTANCE hInstance = GetModuleHandle(NULL);
     creta.hwnd = CreateWindow(wndClass.lpszClassName, L"Creta Window", WS_OVERLAPPEDWINDOW | WS_VISIBLE, CW_USEDEFAULT, CW_USEDEFAULT, 800, 800, 0, 0, hInstance, 0);
     creta.hdc = GetDC(creta.hwnd);
+
 }
 
 LRESULT CALLBACK Creta::WindowProc(HWND hwnd, UINT uMsg, WPARAM wParam, LPARAM lParam) {
@@ -41,12 +42,14 @@ LRESULT CALLBACK Creta::WindowProc(HWND hwnd, UINT uMsg, WPARAM wParam, LPARAM l
 
         // Handle window resize
         case WM_SIZE: {
+            // Get new window size
             RECT rect;
             GetClientRect(hwnd, &rect);
             creta.renderState.width = rect.right - rect.left;
             creta.renderState.height = rect.bottom - rect.top;
             int bufferSize = creta.renderState.width * creta.renderState.height * sizeof(uint32_t);
 
+            // Set renderstate to new window size
             if (creta.renderState.memory) VirtualFree(creta.renderState.memory, 0, MEM_RELEASE);
             creta.renderState.memory = VirtualAlloc(0, bufferSize, MEM_COMMIT | MEM_RESERVE, PAGE_READWRITE);
             creta.renderState.bitmapInfo.bmiHeader.biSize = sizeof(creta.renderState.bitmapInfo.bmiHeader);
@@ -55,6 +58,13 @@ LRESULT CALLBACK Creta::WindowProc(HWND hwnd, UINT uMsg, WPARAM wParam, LPARAM l
             creta.renderState.bitmapInfo.bmiHeader.biPlanes = 1;
             creta.renderState.bitmapInfo.bmiHeader.biBitCount = 32;
             creta.renderState.bitmapInfo.bmiHeader.biCompression = BI_RGB;
+
+            // Set mouse position
+            POINT pos;
+            GetCursorPos(&pos);
+            ScreenToClient(hwnd, &pos);
+            creta.mousePos.x = pos.x;
+            creta.mousePos.y = pos.y;
         } break;
 
         default: {
@@ -82,20 +92,6 @@ void Creta::render() {
 
 	StretchDIBits(creta.hdc, 0, 0, creta.renderState.width, creta.renderState.height, 0, 0,
         creta.renderState.width, creta.renderState.height, creta.renderState.memory, &creta.renderState.bitmapInfo, DIB_RGB_COLORS, SRCCOPY);
-}
-
-std::vector<MSG> Creta::getEvents() {
-    Creta& creta = Creta::getInstance();
-    if (!creta.initialized) exit(1);
-    
-    std::vector<MSG> events;
-	MSG message;
-	while (PeekMessage(&message, creta.hwnd, 0, 0, PM_REMOVE)) {
-		TranslateMessage(&message);
-        DispatchMessage(&message);
-        events.push_back(message);
-	}
-    return events;
 }
 
 void Creta::clearScreen(const uint32_t color) {
@@ -209,10 +205,10 @@ float Clock::tick() {
 float Clock::tick(const int FPS) {
 	QueryPerformanceCounter(&frameEndTime);
 	float deltaTime = static_cast<float>((frameEndTime.QuadPart - frameBeginTime.QuadPart)) / performanceFrequency;
-    DWORD sleepTime = static_cast<DWORD>((1000.0 / FPS) - (deltaTime * 1000.0));
+    float sleepTime = (1000.0f / FPS) - (deltaTime * 1000.0f);
     if (sleepTime < 0) sleepTime = 0;
     Sleep(sleepTime);
     QueryPerformanceCounter(&frameEndTime);
 	frameBeginTime = frameEndTime;
-    return static_cast<float>(deltaTime + (sleepTime / 1000.0));
+    return deltaTime + (sleepTime / 1000.0);
 }

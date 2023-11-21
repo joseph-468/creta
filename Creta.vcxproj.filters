@@ -26,12 +26,18 @@
     <ClCompile Include="src\main.cpp">
       <Filter>Source Files</Filter>
     </ClCompile>
+    <ClCompile Include="src\events.cpp">
+      <Filter>Source Files</Filter>
+    </ClCompile>
   </ItemGroup>
   <ItemGroup>
     <ClInclude Include="include\creta.h">
       <Filter>Header Files</Filter>
     </ClInclude>
     <ClInclude Include="include\utility.h">
+      <Filter>Header Files</Filter>
+    </ClInclude>
+    <ClInclude Include="include\events.h">
       <Filter>Header Files</Filter>
     </ClInclude>
   </ItemGroup>

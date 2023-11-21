@@ -11,32 +11,22 @@ int WinMain(_In_ HINSTANCE hInstance, _In_opt_ HINSTANCE hPrevInstance, _In_ LPS
     Creta::setSize(1280, 720);
     SpriteID img = Creta::loadSprite(L"assets/testsprite.bmp");
 
-    bool moving = false;
-    Rect rect = { 400, 400, 100, 200 };
+    int x = 400;
+    int y = 400;
 
     float deltaTime = 0.01666f;
     Clock clock;
 
     while (true) {
-        for (MSG &msg : Creta::getEvents()) {
-            if (msg.message == WM_KEYDOWN) {
-                if (msg.wParam == VK_DOWN) {
-                    moving = true;
-                }
+        for (Event &event: Creta::getEvents()) {
+            if (event.type == MOUSEMOTION) {
+                x = event.mouseMotion.pos.x;
+                y = event.mouseMotion.pos.y;
             }
-            if (msg.message == WM_KEYUP) {
-                if (msg.wParam == VK_DOWN) {
-					moving = false;
-                }
-            }
-        }
-        if (moving) {
-            rect.y += 1;
         }
 
         Creta::clearScreen(GRAY);
-        Creta::drawRect(rect, GREEN);
-        Creta::drawSprite(img, 50, 50);
+        Creta::drawSprite(img, x, y);
 		Creta::render();
         deltaTime = clock.tick(60);
     }
