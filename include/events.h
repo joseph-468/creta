@@ -6,9 +6,15 @@ enum EventType {
 	MOUSEBUTTONUP,
 	MOUSEBUTTONDOWN,
 	MOUSEMOTION,
+	NONE,
 };
 
-// Need to add key modifier member to key up and key down
+enum MouseButton {
+	LEFTBUTTON,
+	MIDDLEBUTTON,
+	RIGHTBUTTON,
+	XBUTTON,
+};
 
 struct Event {
 	EventType type;
@@ -21,9 +27,11 @@ struct Event {
 		} keyUp;
 		struct {
 			POINT pos;
+			uint32_t button;
 		} mouseButtonUp;
 		struct {
 			POINT pos;
+			uint32_t button;
 		} mouseButtonDown;
 		struct {
 			POINT pos;

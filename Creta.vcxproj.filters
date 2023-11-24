@@ -15,7 +15,10 @@
     </Filter>
   </ItemGroup>
   <ItemGroup>
-    <Image Include="assets\testsprite.bmp">
+    <Image Include="assets\sprite.bmp">
+      <Filter>Resource Files</Filter>
+    </Image>
+    <Image Include="assets\transparentsprite.bmp">
       <Filter>Resource Files</Filter>
     </Image>
   </ItemGroup>
@@ -40,5 +43,10 @@
     <ClInclude Include="include\events.h">
       <Filter>Header Files</Filter>
     </ClInclude>
+  </ItemGroup>
+  <ItemGroup>
+    <Media Include="assets\music.wav">
+      <Filter>Resource Files</Filter>
+    </Media>
   </ItemGroup>
 </Project>

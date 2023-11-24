@@ -6,7 +6,7 @@
 #include "../include/creta.h"
 #include "../include/utility.h"
 
-Creta::Creta() : initialized(false), hdc(nullptr), hwnd(nullptr), renderState(), mousePos() {}
+Creta::Creta() : initialized(false), hdc(nullptr), hwnd(nullptr), renderState(), mousePos(), spriteIDCounter(0), sprites() {}
 
 Creta& Creta::getInstance() {
     static Creta instance;
@@ -138,11 +138,11 @@ void Creta::drawRect(const Rect &rect, const uint32_t color) {
     }
 }
 
-SpriteID Creta::loadSprite(const std::wstring& filepath) {
+SpriteID Creta::loadSprite(const std::wstring& filepath, bool transparent) {
     Creta& creta = Creta::getInstance();
     if (!creta.initialized) exit(1);
 
-    HBITMAP hBitmap = (HBITMAP)LoadImage(NULL, filepath.c_str(), IMAGE_BITMAP, 0, 0, LR_LOADFROMFILE | LR_DEFAULTSIZE);
+    HBITMAP hBitmap = (HBITMAP)LoadImage(NULL, filepath.c_str(), IMAGE_BITMAP, 0, 0, LR_LOADFROMFILE);
     HDC hdc = CreateCompatibleDC(nullptr);
     SelectObject(hdc, hBitmap);
     BITMAP bmp;
@@ -159,13 +159,24 @@ SpriteID Creta::loadSprite(const std::wstring& filepath) {
 	GetDIBits(hdc, hBitmap, 0, bmp.bmHeight, pixels, &bmi, DIB_RGB_COLORS);
 
     Sprite sprite;
+    sprite.id = creta.spriteIDCounter++;
+    sprite.transparent = transparent;
+	sprite.size = bmp.bmWidth * bmp.bmHeight;
+    if (transparent) sprite.size /= 2;
     sprite.width = bmp.bmWidth;
     sprite.height = bmp.bmHeight;
     sprite.data = pixels;
-    creta.sprites.push_back(sprite);
+    creta.sprites[sprite.id] = sprite;
     DeleteObject(hBitmap);
     DeleteDC(hdc);
-    return static_cast<SpriteID>(creta.sprites.size() - 1);
+    return sprite.id;
+}
+
+void Creta::unloadSprite(const SpriteID spriteID) {
+    Creta& creta = Creta::getInstance();
+    if (!creta.initialized) exit(1);
+
+    creta.sprites.erase(spriteID);
 }
 
 void Creta::drawSprite(const SpriteID spriteID, const uint32_t x, const uint32_t y) {
@@ -173,15 +184,20 @@ void Creta::drawSprite(const SpriteID spriteID, const uint32_t x, const uint32_t
     if (!creta.initialized) exit(1);
     
     Sprite sprite = creta.sprites[spriteID];
+    sprite.height /= (sprite.transparent) ? 2 : 1;
     uint32_t left = clamp(x, 0, creta.renderState.width);
     uint32_t right = clamp(x + sprite.width, 0, creta.renderState.width);
     uint32_t bottom = clamp(y + sprite.height, 0, creta.renderState.height);
     uint32_t top = clamp(y, 0, creta.renderState.height);
 
     for (uint32_t yPos = top; yPos < bottom; yPos++) {
+        uint32_t spritePixel;
         uint32_t* pixel = (uint32_t*)creta.renderState.memory + left + ((creta.renderState.height - yPos-1) * creta.renderState.width);
         for (uint32_t xPos = left; xPos < right; xPos++) {
-            *pixel++ = (uint32_t)sprite.data[xPos-x + (yPos-y) * sprite.width];
+            spritePixel = xPos - x + (yPos - y) * sprite.width;
+			if (!sprite.transparent || sprite.data[spritePixel + sprite.size] != BLACK)
+				*pixel = sprite.data[spritePixel];
+			pixel++;
         }
     }
 }
