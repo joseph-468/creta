@@ -1,4 +1,3 @@
-### Creta
+# Creta
 A Windows API based game framework I'm developing \
-Currently, test files and the framework are not seperated \
-No plans have been made so I'm just seeing how big this project gets
+Although currently not working on this I do have plans to work it on it more to learn about graphics rendering
